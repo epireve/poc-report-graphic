@@ -41,6 +41,17 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       pdf.setTextColor(0, 0, 0);
     };
 
+    // Helper function to add page number
+    const addPageNumber = (pageNumber: number) => {
+      pdf.setFontSize(24);
+      pdf.setTextColor(100, 100, 100);
+      const text = `${pageNumber}`;
+      const textWidth = pdf.getTextWidth(text);
+      // Position the page number on the right with 80pt margin
+      pdf.text(text, 1920 - 80 - textWidth, 1040);
+      pdf.setTextColor(0, 0, 0);
+    };
+
     // Helper function to handle two-column layout
     const addTwoColumnContent = (title: string, content: string, startY: number) => {
       const columnWidth = 800; // Width for each column
@@ -162,6 +173,7 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     // Table of Contents
     pdf.addPage();
     addSlideHeader('Table of Contents');
+    // No page number for TOC
 
     const sections = [
       { title: 'Introduction', content: formData.sustainabilityData.introduction, layout: 'single-column' },
@@ -176,7 +188,7 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     // Add TOC entries with internal links
     let tocY = 200;
     sections.forEach((section, index) => {
-      const pageNum = index + 3; // Starting from page 3 (after cover and TOC)
+      const pageNum = index + 1; // Starting from page 1 (after cover and TOC)
       
       pdf.setFontSize(32);
       pdf.setTextColor(80, 80, 80);
@@ -188,7 +200,7 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       const dots = '.'.repeat(Math.floor(dotsWidth / pdf.getTextWidth('.')));
       
       // Create clickable link for the title and page number
-      pdf.link(80, tocY - 20, 1760, 30, { pageNumber: pageNum });
+      pdf.link(80, tocY - 20, 1760, 30, { pageNumber: pageNum + 2 }); // +2 to account for cover and TOC
       pdf.text(sectionTitle, 80, tocY);
       pdf.text(dots, 80 + titleWidth + 20, tocY);
       pdf.text(pageNumText, 1840 - pageNumWidth, tocY);
@@ -197,9 +209,10 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     });
 
     // Content pages
-    sections.forEach((section) => {
+    sections.forEach((section, index) => {
       pdf.addPage();
       addSlideHeader(section.title);
+      addPageNumber(index + 1); // Start from page 1 after TOC
       
       if (section.layout === 'two-column') {
         addTwoColumnContent(section.title, section.content, 180);
@@ -207,11 +220,13 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
         // Single column layout
         let yPosition = 180;
         const paragraphs = (section.content || '').split('\n').filter(p => p.trim());
+        let continuedPages = 0;
         
         paragraphs.forEach(paragraph => {
           if (yPosition > 900) {
             pdf.addPage();
             addSlideHeader(section.title + ' (continued)');
+            addPageNumber(index + 1 + ++continuedPages);
             yPosition = 180;
           }
 
