@@ -21,8 +21,7 @@ In 2024, we've made significant strides in our sustainability journey, implement
 • Investment in green technology and sustainable infrastructure
 • Partnership with environmental organizations and experts
 
-The Board of Directors maintains active oversight through quarterly reviews of sustainability performance and strategic planning sessions focused on environmental goals. Our CEO chairs the 
-Sustainability Committee, ensuring top-level commitment to our environmental objectives.`,
+The Board of Directors maintains active oversight through quarterly reviews of sustainability performance and strategic planning sessions focused on environmental goals. Our CEO chairs the Sustainability Committee, ensuring top-level commitment to our environmental objectives.`,
 
   organizationalStructure: `Our sustainability framework is supported by:
 • Chief Sustainability Officer (CSO) reporting directly to CEO
