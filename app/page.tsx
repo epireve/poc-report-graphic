@@ -192,19 +192,19 @@ export default function Home() {
 
               {currentStep === 3 && (
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between space-y-4 sm:space-y-0">
                     <div>
                       <h2 className="text-2xl font-semibold">Preview Report</h2>
-                      <p className="text-gray-600">
+                      <p className="text-gray-600 mt-1">
                         Generate a preview, review your report, and download the
                         final PDF
                       </p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:items-start">
                       {pdfUrl && (
                         <button
                           onClick={handleDownload}
-                          className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                          className="w-full sm:w-auto order-2 sm:order-1 px-6 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                         >
                           Download PDF
                         </button>
@@ -212,7 +212,7 @@ export default function Home() {
                       <button
                         onClick={handleGeneratePreview}
                         disabled={isGenerating}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="w-full sm:w-auto order-1 sm:order-2 px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {isGenerating ? (
                           <>
@@ -227,7 +227,7 @@ export default function Home() {
                   </div>
 
                   {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-6">
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
                       {error}
                     </div>
                   )}
@@ -235,7 +235,7 @@ export default function Home() {
                   {pdfUrl ? (
                     <PDFPreview pdfUrl={pdfUrl} />
                   ) : (
-                    <div className="bg-gray-50 rounded-lg p-12 text-center">
+                    <div className="bg-gray-50 rounded-lg p-12 text-center mt-6">
                       <div className="mb-4">
                         <svg
                           className="mx-auto h-12 w-12 text-gray-400"
