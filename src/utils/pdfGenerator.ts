@@ -27,15 +27,78 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     };
 
     // Helper function to add a slide header
-    const addSlideHeader = (title: string) => {
+    const addSlideHeader = (title: string, sections: Array<{ title: string; pageNumber: number }>) => {
       // Add header background
       pdf.setFillColor(70, 70, 70); // Neutral dark gray
       pdf.rect(0, 0, 1920, 120, 'F');
       
-      // Add title
+      // Add title on the left
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(44);
-      pdf.text(title, 80, 80);
+      pdf.setFontSize(32); // Smaller title for better balance
+      pdf.text(title, 80, 70); // Centered vertically in the header
+
+      // Add navigation menu
+      pdf.setFontSize(18); // Small font size for menu
+      const spacing = 80; // Space between menu items
+      const firstLineY = 45; // Adjusted Y position for first line
+      const secondLineY = 85; // Adjusted Y position for second line
+
+      // Split sections into two arrays for two lines
+      const midPoint = Math.ceil(sections.length / 2);
+      const firstLineItems = sections.slice(0, midPoint);
+      const secondLineItems = sections.slice(midPoint);
+
+      // Calculate total width for each line to right-align
+      const calculateLineWidth = (items: typeof sections) => {
+        return items.reduce((total, section, index) => {
+          const textWidth = pdf.getTextWidth(section.title);
+          // Add separator width if not last item
+          return total + textWidth + (index < items.length - 1 ? spacing : 0);
+        }, 0);
+      };
+
+      const firstLineWidth = calculateLineWidth(firstLineItems);
+      const secondLineWidth = calculateLineWidth(secondLineItems);
+
+      // First line of menu - align right
+      let menuX = 1920 - 80 - firstLineWidth; // Right margin of 80
+      firstLineItems.forEach((section, index) => {
+        const text = section.title;
+        const textWidth = pdf.getTextWidth(text);
+        
+        // Create clickable link
+        pdf.setTextColor(200, 200, 200);
+        pdf.text(text, menuX, firstLineY);
+        pdf.link(menuX, firstLineY - 20, textWidth, 30, { pageNumber: section.pageNumber + 3 });
+
+        menuX += textWidth + spacing;
+        
+        // Add separator if not last item in first line
+        if (index < firstLineItems.length - 1) {
+          pdf.setTextColor(150, 150, 150);
+          pdf.text('|', menuX - spacing/2 + 5, firstLineY);
+        }
+      });
+
+      // Second line of menu - align right
+      menuX = 1920 - 80 - secondLineWidth; // Right margin of 80
+      secondLineItems.forEach((section, index) => {
+        const text = section.title;
+        const textWidth = pdf.getTextWidth(text);
+        
+        // Create clickable link
+        pdf.setTextColor(200, 200, 200);
+        pdf.text(text, menuX, secondLineY);
+        pdf.link(menuX, secondLineY - 20, textWidth, 30, { pageNumber: section.pageNumber + 3 });
+
+        menuX += textWidth + spacing;
+        
+        // Add separator if not last item in second line
+        if (index < secondLineItems.length - 1) {
+          pdf.setTextColor(150, 150, 150);
+          pdf.text('|', menuX - spacing/2 + 5, secondLineY);
+        }
+      });
       
       // Reset text color
       pdf.setTextColor(0, 0, 0);
@@ -47,7 +110,6 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       pdf.setTextColor(100, 100, 100);
       const text = `${pageNumber}`;
       const textWidth = pdf.getTextWidth(text);
-      // Position the page number on the right with 80pt margin
       pdf.text(text, 1920 - 80 - textWidth, 1040);
       pdf.setTextColor(0, 0, 0);
     };
@@ -72,7 +134,7 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
         // Check if we need a new page
         if (currentY > 900) {
           pdf.addPage();
-          addSlideHeader(title + ' (continued)');
+          addSlideHeader(title + ' (continued)', sections);
           leftY = 180;
           rightY = 180;
           isLeftColumn = true;
@@ -109,7 +171,7 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
         } else if (!isLeftColumn && rightY > 900) {
           // If right column is full, start new page
           pdf.addPage();
-          addSlideHeader(title + ' (continued)');
+          addSlideHeader(title + ' (continued)', sections);
           leftY = 180;
           rightY = 180;
           isLeftColumn = true;
@@ -125,11 +187,9 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     console.log('Starting cover page generation');
 
     // Cover Page
-    // Add subtle background
-    pdf.setFillColor(250, 250, 250); // Very light gray for base
+    // Clean white background
+    pdf.setFillColor(255, 255, 255);
     pdf.rect(0, 0, 1920, 1080, 'F');
-    pdf.setFillColor(240, 240, 240); // Slightly darker for top section
-    pdf.rect(0, 0, 1920, 400, 'F');
 
     // Title
     pdf.setFontSize(64);
@@ -172,18 +232,18 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
 
     // Table of Contents
     pdf.addPage();
-    addSlideHeader('Table of Contents');
-    // No page number for TOC
 
     const sections = [
-      { title: 'Introduction', content: formData.sustainabilityData.introduction, layout: 'single-column' },
-      { title: 'Management Role', content: formData.sustainabilityData.managementRole, layout: 'single-column' },
-      { title: 'Organizational Structure', content: formData.sustainabilityData.organizationalStructure, layout: 'single-column' },
-      { title: 'Sustainability Targets', content: formData.sustainabilityData.sustainabilityTargets, layout: 'two-column' },
-      { title: 'Strategic Initiatives', content: formData.sustainabilityData.strategicInitiatives, layout: 'two-column' },
-      { title: 'Performance Trends', content: formData.sustainabilityData.performanceTrends, layout: 'two-column' },
-      { title: 'Summary', content: formData.sustainabilityData.summary, layout: 'single-column' }
+      { title: 'Introduction', content: formData.sustainabilityData.introduction, layout: 'single-column', pageNumber: 0 },
+      { title: 'Management Role', content: formData.sustainabilityData.managementRole, layout: 'single-column', pageNumber: 1 },
+      { title: 'Organizational Structure', content: formData.sustainabilityData.organizationalStructure, layout: 'single-column', pageNumber: 2 },
+      { title: 'Sustainability Targets', content: formData.sustainabilityData.sustainabilityTargets, layout: 'two-column', pageNumber: 3 },
+      { title: 'Strategic Initiatives', content: formData.sustainabilityData.strategicInitiatives, layout: 'two-column', pageNumber: 4 },
+      { title: 'Performance Trends', content: formData.sustainabilityData.performanceTrends, layout: 'two-column', pageNumber: 5 },
+      { title: 'Summary', content: formData.sustainabilityData.summary, layout: 'single-column', pageNumber: 6 }
     ];
+
+    addSlideHeader('Table of Contents', sections);
 
     // Add TOC entries with internal links
     let tocY = 200;
@@ -211,10 +271,10 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     // Content pages
     sections.forEach((section, index) => {
       pdf.addPage();
-      addSlideHeader(section.title);
-      addPageNumber(index + 1); // Start from page 1 after TOC
+      addSlideHeader(section.title, sections);
+      addPageNumber(index + 1);
       
-      if (section.layout === 'two-column') {
+      if (section.layout === "two-column") {
         addTwoColumnContent(section.title, section.content, 180);
       } else {
         // Single column layout
@@ -225,7 +285,7 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
         paragraphs.forEach(paragraph => {
           if (yPosition > 900) {
             pdf.addPage();
-            addSlideHeader(section.title + ' (continued)');
+            addSlideHeader(section.title + ' (continued)', sections);
             addPageNumber(index + 1 + ++continuedPages);
             yPosition = 180;
           }
