@@ -70,7 +70,7 @@ export const SustainabilityDataForm: React.FC<SustainabilityDataFormProps> = ({
             Introduction
           </label>
           <p className="text-sm text-gray-500 mb-2">
-            Provide an overview of your company's sustainability approach
+            Provide an overview of your company&apos;s sustainability approach
           </p>
           <textarea
             id="introduction"
