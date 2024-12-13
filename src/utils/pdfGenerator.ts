@@ -247,8 +247,12 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
 
     // Add TOC entries with internal links
     let tocY = 200;
+    
+    // First pass: find the longest title + dots combination to align page numbers
+    const pageNumX = 1800; // Fixed position for all page numbers
+    
     sections.forEach((section, index) => {
-      const pageNum = index + 1; // Starting from page 1 (after cover and TOC)
+      const pageNum = index + 1;
       
       pdf.setFontSize(32);
       pdf.setTextColor(80, 80, 80);
@@ -256,14 +260,26 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       const pageNumText = pageNum.toString();
       const titleWidth = pdf.getTextWidth(sectionTitle);
       const pageNumWidth = pdf.getTextWidth(pageNumText);
-      const dotsWidth = 1600 - titleWidth - pageNumWidth - 160;
-      const dots = '.'.repeat(Math.floor(dotsWidth / pdf.getTextWidth('.')));
       
-      // Create clickable link for the title and page number
-      pdf.link(80, tocY - 20, 1760, 30, { pageNumber: pageNum + 2 }); // +2 to account for cover and TOC
-      pdf.text(sectionTitle, 80, tocY);
-      pdf.text(dots, 80 + titleWidth + 20, tocY);
-      pdf.text(pageNumText, 1840 - pageNumWidth, tocY);
+      // Calculate dots with much denser spacing
+      const dotsWidth = pageNumX - (80 + titleWidth + 20) - pageNumWidth - 10; // Space from title end to page number
+      const singleDotWidth = pdf.getTextWidth('.');
+      const numberOfDots = Math.floor(dotsWidth / (singleDotWidth + 0.1)); // Very tight spacing
+      
+      // Create dots with minimal spacing
+      const dots = Array(numberOfDots).fill('.').join('');
+      
+      // Position elements with precise spacing
+      const titleX = 80;
+      const dotsX = titleX + titleWidth + 10;
+      
+      // Create clickable link for the entire line
+      pdf.link(titleX, tocY - 20, 1720, 30, { pageNumber: pageNum + 2 });
+      
+      // Render the elements
+      pdf.text(sectionTitle, titleX, tocY);
+      pdf.text(dots, dotsX, tocY);
+      pdf.text(pageNumText, pageNumX, tocY);
       
       tocY += 60;
     });
