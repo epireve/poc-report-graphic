@@ -41,7 +41,7 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ pdfUrl }) => {
               theme={{
                 theme: "dark",
               }}
-              renderError={(error: Error) => (
+              renderError={(error: any) => (
                 <div className="flex flex-col items-center justify-center p-8 bg-red-50 rounded-lg">
                   <p className="text-red-600 mb-2">Error loading PDF</p>
                   <p className="text-sm text-red-500">{error.message}</p>
