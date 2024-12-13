@@ -1,8 +1,8 @@
 import { mockCompanyProfile, mockSustainabilityData } from "../mocks/formData";
 
 export const useMockData = (step: number) => {
-  // Only use mock data in development
-  if (process.env.NODE_ENV !== "development") {
+  // Use mock data if NEXT_PUBLIC_USE_MOCK_DATA is set to "true"
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA !== "true") {
     return null;
   }
 
