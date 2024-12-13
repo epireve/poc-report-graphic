@@ -28,7 +28,7 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ pdfUrl }) => {
         className="bg-[#444] rounded-lg shadow-lg mb-4 w-full"
         style={{ height: "calc(100vh - 300px)" }}
       >
-        <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js">
+        <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
           <div style={{ height: "100%" }}>
             <Viewer
               fileUrl={pdfUrl}
@@ -63,7 +63,14 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ pdfUrl }) => {
       <div className="mt-4 text-sm text-gray-500 w-full text-center">
         PDF URL:{" "}
         <code className="bg-gray-100 px-2 py-1 rounded break-all">
-          {pdfUrl}
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-700 underline"
+          >
+            {pdfUrl}
+          </a>
         </code>
       </div>
     </div>
