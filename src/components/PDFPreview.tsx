@@ -25,7 +25,7 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ pdfUrl }) => {
   return (
     <div className="flex flex-col items-center bg-gray-100 p-4 rounded-lg">
       <div
-        className="bg-[#444] p-8 rounded-lg shadow-lg mb-4 w-full"
+        className="bg-[#444] rounded-lg shadow-lg mb-4 w-full"
         style={{ height: "calc(100vh - 300px)" }}
       >
         <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js">
@@ -37,7 +37,7 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ pdfUrl }) => {
                 zoomPluginInstance,
                 pageNavigationPluginInstance,
               ]}
-              defaultScale={0.4}
+              defaultScale={0.5}
               theme={{
                 theme: "dark",
               }}
