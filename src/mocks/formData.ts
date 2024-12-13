@@ -99,9 +99,7 @@ Each department has designated sustainability leads who coordinate with the cent
    • 20% expansion of community programs`,
 
   summary: `Executive Summary:
-EcoTech Solutions has demonstrated exceptional progress in our sustainability journey throughout 
-2024. Our comprehensive approach has yielded significant results across environmental, social, 
-and governance dimensions.
+EcoTech Solutions has demonstrated exceptional progress in our sustainability journey throughout 2024. Our comprehensive approach has yielded significant results across environmental, social, and governance dimensions.
 
 Key Achievements:
 • Reduced carbon footprint by 25% through innovative energy solutions
@@ -110,7 +108,5 @@ Key Achievements:
 • Launched industry-leading circular economy initiatives
 
 Looking Forward:
-We remain committed to our ambitious 2025 goals, with clear strategies and investments in place 
-to achieve them. Our integrated approach to sustainability continues to drive innovation and 
-create value for all stakeholders while contributing to a more sustainable future.`
+We remain committed to our ambitious 2025 goals, with clear strategies and investments in place to achieve them. Our integrated approach to sustainability continues to drive innovation and create value for all stakeholders while contributing to a more sustainable future.`
 }; 

@@ -13,7 +13,7 @@ export const CoverLayout: React.FC<CoverLayoutProps> = ({
 }) => {
   return (
     <div className="aspect-[1.4142] bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="h-full flex flex-col justify-center items-center p-16 bg-gradient-to-br from-blue-50 to-white">
+      <div className="h-full flex flex-col justify-center items-center p-16 bg-gradient-to-br from-blue-300 to-white">
         <div className="space-y-8 text-center max-w-3xl">
           <div className="text-5xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
             {title}

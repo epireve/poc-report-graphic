@@ -13,17 +13,17 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       compress: true
     });
 
-    console.log('PDF initialized');
-
     // Set default font
     pdf.setFont("helvetica");
 
     // Helper function to add wrapped text with proper line height
-    const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number) => {
+    const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number, isBulletPoint: boolean = false) => {
       pdf.setFontSize(fontSize);
       const lines = pdf.splitTextToSize(text || '', maxWidth);
       pdf.text(lines, x, y);
-      return y + (lines.length * (fontSize * 1.5));
+      // Use smaller line height for bullet points
+      const lineHeight = isBulletPoint ? fontSize * 1.2 : fontSize * 1.5;
+      return y + (lines.length * lineHeight);
     };
 
     // Helper function to add a slide header
@@ -39,6 +39,76 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       
       // Reset text color
       pdf.setTextColor(0, 0, 0);
+    };
+
+    // Helper function to handle two-column layout
+    const addTwoColumnContent = (title: string, content: string, startY: number) => {
+      const columnWidth = 800; // Width for each column
+      const columnGap = 80; // Gap between columns
+      const leftColumnX = 80;
+      const rightColumnX = leftColumnX + columnWidth + columnGap;
+      
+      let leftY = startY;
+      let rightY = startY;
+      let isLeftColumn = true;
+      
+      const paragraphs = (content || '').split('\n').filter(p => p.trim());
+      
+      paragraphs.forEach(paragraph => {
+        const currentX = isLeftColumn ? leftColumnX : rightColumnX;
+        const currentY = isLeftColumn ? leftY : rightY;
+        
+        // Check if we need a new page
+        if (currentY > 900) {
+          pdf.addPage();
+          addSlideHeader(title + ' (continued)');
+          leftY = 180;
+          rightY = 180;
+          isLeftColumn = true;
+          return;
+        }
+        
+        // Add text and update position
+        if (paragraph.trim().startsWith('•')) {
+          const newY = addWrappedText(paragraph, currentX + 40, currentY, columnWidth - 40, 28, true);
+          if (isLeftColumn) {
+            leftY = newY + 20;
+          } else {
+            rightY = newY + 20;
+          }
+        } else if (paragraph.match(/^\d+\./)) {
+          const newY = addWrappedText(paragraph, currentX, currentY, columnWidth, 32, true);
+          if (isLeftColumn) {
+            leftY = newY + 20;
+          } else {
+            rightY = newY + 20;
+          }
+        } else {
+          const newY = addWrappedText(paragraph, currentX, currentY, columnWidth, 32);
+          if (isLeftColumn) {
+            leftY = newY + 40;
+          } else {
+            rightY = newY + 40;
+          }
+        }
+        
+        // Switch columns if left column gets too long
+        if (isLeftColumn && leftY > rightY + 200) {
+          isLeftColumn = false;
+        } else if (!isLeftColumn && rightY > 900) {
+          // If right column is full, start new page
+          pdf.addPage();
+          addSlideHeader(title + ' (continued)');
+          leftY = 180;
+          rightY = 180;
+          isLeftColumn = true;
+        } else {
+          // Alternate between columns
+          isLeftColumn = !isLeftColumn;
+        }
+      });
+      
+      return Math.max(leftY, rightY);
     };
 
     console.log('Starting cover page generation');
@@ -70,11 +140,8 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     const dateWidth = pdf.getTextWidth(date);
     pdf.text(date, (1920 - dateWidth) / 2, 480);
 
-    console.log('Cover page completed');
-
     // Add logo if available
     if (formData.companyProfile.companyLogo) {
-      console.log('Processing logo');
       const reader = new FileReader();
       await new Promise((resolve) => {
         reader.onload = () => {
@@ -86,32 +153,31 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
           console.error('Error reading logo:', error);
           resolve(undefined);
         };
-        reader.readAsDataURL(formData.companyProfile.companyLogo);
+        if (formData.companyProfile.companyLogo) {
+          reader.readAsDataURL(formData.companyProfile.companyLogo);
+        }
       });
     }
-
-    console.log('Starting sections generation');
 
     // Table of Contents
     pdf.addPage();
     addSlideHeader('Table of Contents');
 
     const sections = [
-      { title: 'Introduction', content: formData.sustainabilityData.introduction },
-      { title: 'Management Role', content: formData.sustainabilityData.managementRole },
-      { title: 'Organizational Structure', content: formData.sustainabilityData.organizationalStructure },
-      { title: 'Sustainability Targets', content: formData.sustainabilityData.sustainabilityTargets },
-      { title: 'Strategic Initiatives', content: formData.sustainabilityData.strategicInitiatives },
-      { title: 'Performance Trends', content: formData.sustainabilityData.performanceTrends },
-      { title: 'Summary', content: formData.sustainabilityData.summary }
+      { title: 'Introduction', content: formData.sustainabilityData.introduction, layout: 'single-column' },
+      { title: 'Management Role', content: formData.sustainabilityData.managementRole, layout: 'single-column' },
+      { title: 'Organizational Structure', content: formData.sustainabilityData.organizationalStructure, layout: 'single-column' },
+      { title: 'Sustainability Targets', content: formData.sustainabilityData.sustainabilityTargets, layout: 'two-column' },
+      { title: 'Strategic Initiatives', content: formData.sustainabilityData.strategicInitiatives, layout: 'two-column' },
+      { title: 'Performance Trends', content: formData.sustainabilityData.performanceTrends, layout: 'two-column' },
+      { title: 'Summary', content: formData.sustainabilityData.summary, layout: 'single-column' }
     ];
 
-    // Add TOC entries
+    // Add TOC entries with internal links
     let tocY = 200;
     sections.forEach((section, index) => {
-      const pageNum = index + 3;
+      const pageNum = index + 3; // Starting from page 3 (after cover and TOC)
       
-      // Add dot leaders between title and page number
       pdf.setFontSize(32);
       pdf.setTextColor(80, 80, 80);
       const sectionTitle = section.title;
@@ -121,6 +187,8 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       const dotsWidth = 1600 - titleWidth - pageNumWidth - 160;
       const dots = '.'.repeat(Math.floor(dotsWidth / pdf.getTextWidth('.')));
       
+      // Create clickable link for the title and page number
+      pdf.link(80, tocY - 20, 1760, 30, { pageNumber: pageNum });
       pdf.text(sectionTitle, 80, tocY);
       pdf.text(dots, 80 + titleWidth + 20, tocY);
       pdf.text(pageNumText, 1840 - pageNumWidth, tocY);
@@ -128,42 +196,38 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       tocY += 60;
     });
 
-    console.log('Table of contents completed');
-
     // Content pages
-    sections.forEach((section, index) => {
-      console.log(`Generating section ${index + 1}: ${section.title}`);
+    sections.forEach((section) => {
       pdf.addPage();
       addSlideHeader(section.title);
       
-      // Section content
-      let yPosition = 180;
-      const paragraphs = (section.content || '').split('\n').filter(p => p.trim());
-      
-      paragraphs.forEach(paragraph => {
-        if (yPosition > 900) {
-          pdf.addPage();
-          addSlideHeader(section.title + ' (continued)');
-          yPosition = 180;
-        }
-
-        // Check if paragraph is a bullet point
-        if (paragraph.trim().startsWith('•')) {
-          // Indent bullet points
-          yPosition = addWrappedText(paragraph, 120, yPosition, 1680, 28);
-        } else if (paragraph.match(/^\d+\./)) {
-          // Numbered points (slightly larger)
-          yPosition = addWrappedText(paragraph, 80, yPosition, 1720, 32);
-        } else {
-          // Regular paragraphs
-          yPosition = addWrappedText(paragraph, 80, yPosition, 1720, 32);
-        }
+      if (section.layout === 'two-column') {
+        addTwoColumnContent(section.title, section.content, 180);
+      } else {
+        // Single column layout
+        let yPosition = 180;
+        const paragraphs = (section.content || '').split('\n').filter(p => p.trim());
         
-        yPosition += 40; // Space between paragraphs
-      });
-    });
+        paragraphs.forEach(paragraph => {
+          if (yPosition > 900) {
+            pdf.addPage();
+            addSlideHeader(section.title + ' (continued)');
+            yPosition = 180;
+          }
 
-    console.log('All sections completed, generating final PDF');
+          if (paragraph.trim().startsWith('•')) {
+            yPosition = addWrappedText(paragraph, 120, yPosition, 1680, 28, true);
+            yPosition += 20;
+          } else if (paragraph.match(/^\d+\./)) {
+            yPosition = addWrappedText(paragraph, 80, yPosition, 1720, 32, true);
+            yPosition += 20;
+          } else {
+            yPosition = addWrappedText(paragraph, 80, yPosition, 1720, 32);
+            yPosition += 40;
+          }
+        });
+      }
+    });
 
     // Generate blob URL
     const pdfBlob = pdf.output('blob');
@@ -173,9 +237,9 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
   } catch (error) {
     console.error('Error generating PDF:', error);
     console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
+      name: (error as Error).name,
+      message: (error as Error).message,
+      stack: (error as Error).stack
     });
     throw new Error('Failed to generate PDF: ' + (error as Error).message);
   }
