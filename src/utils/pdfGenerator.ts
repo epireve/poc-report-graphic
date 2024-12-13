@@ -191,25 +191,37 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     pdf.setFillColor(255, 255, 255);
     pdf.rect(0, 0, 1920, 1080, 'F');
 
-    // Title
-    pdf.setFontSize(64);
-    pdf.setTextColor(50, 50, 50); // Dark gray for text
-    const title = formData.companyProfile.reportTitle || 'Sustainability Report';
-    const titleWidth = pdf.getTextWidth(title);
-    pdf.text(title, (1920 - titleWidth) / 2, 300);
+    // Center point for vertical positioning
+    const centerY = 1080 / 2;
+    const spacing = 80; // Spacing between elements
 
-    // Company name
-    pdf.setFontSize(40);
-    pdf.setTextColor(80, 80, 80);
+    // Company name (smaller and above title)
+    pdf.setFontSize(36);
+    pdf.setTextColor(100, 100, 100); // Subtle gray
     const companyName = formData.companyProfile.companyName || 'Company Name';
     const companyNameWidth = pdf.getTextWidth(companyName);
-    pdf.text(companyName, (1920 - companyNameWidth) / 2, 400);
+    pdf.text(companyName, (1920 - companyNameWidth) / 2, centerY - spacing * 2);
 
-    // Date
-    pdf.setFontSize(32);
+    // Title (large and bold)
+    pdf.setFontSize(72);
+    pdf.setTextColor(40, 40, 40); // Dark gray for contrast
+    const title = formData.companyProfile.reportTitle || 'Sustainability Report';
+    const titleWidth = pdf.getTextWidth(title);
+    pdf.text(title, (1920 - titleWidth) / 2, centerY);
+
+    // Add subtle decorative line
+    const lineWidth = Math.min(600, titleWidth + 200); // Line slightly wider than title
+    pdf.setDrawColor(200, 200, 200); // Light gray
+    pdf.setLineWidth(2);
+    const lineY = centerY + spacing / 2;
+    pdf.line((1920 - lineWidth) / 2, lineY, (1920 + lineWidth) / 2, lineY);
+
+    // Date (below the line)
+    pdf.setFontSize(28);
+    pdf.setTextColor(120, 120, 120); // Medium gray
     const date = formData.companyProfile.reportDate || new Date().toISOString().split('T')[0];
     const dateWidth = pdf.getTextWidth(date);
-    pdf.text(date, (1920 - dateWidth) / 2, 480);
+    pdf.text(date, (1920 - dateWidth) / 2, centerY + spacing * 1.5);
 
     // Add logo if available
     if (formData.companyProfile.companyLogo) {
@@ -217,7 +229,11 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       await new Promise((resolve) => {
         reader.onload = () => {
           const logoData = reader.result as string;
-          pdf.addImage(logoData, 'JPEG', (1920 - 300) / 2, 580, 300, 300);
+          // Position logo above company name
+          const logoSize = 200;
+          const logoX = (1920 - logoSize) / 2;
+          const logoY = centerY - spacing * 5;
+          pdf.addImage(logoData, 'JPEG', logoX, logoY, logoSize, logoSize);
           resolve(undefined);
         };
         reader.onerror = (error) => {
@@ -229,6 +245,13 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
         }
       });
     }
+
+    // Add subtle footer text
+    pdf.setFontSize(16);
+    pdf.setTextColor(150, 150, 150); // Very light gray
+    const footerText = 'CONFIDENTIAL';
+    const footerWidth = pdf.getTextWidth(footerText);
+    pdf.text(footerText, (1920 - footerWidth) / 2, 1000);
 
     // Table of Contents
     pdf.addPage();
