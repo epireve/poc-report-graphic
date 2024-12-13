@@ -28,6 +28,8 @@ export default function Home() {
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCompanyProfileSubmit = (data: FormState["companyProfile"]) => {
     setFormData((prev) => ({ ...prev, companyProfile: data }));
@@ -39,15 +41,22 @@ export default function Home() {
   ) => {
     const updatedFormData = { ...formData, sustainabilityData: data };
     setFormData(updatedFormData);
+    setCurrentStep(3);
+  };
 
+  const handleGeneratePreview = async () => {
+    setIsGenerating(true);
+    setError(null);
     try {
-      // Generate PDF and get the local URL
-      const url = await generatePDF(updatedFormData);
+      console.log("Generating PDF with form data:", formData);
+      const url = await generatePDF(formData);
+      console.log("PDF generated successfully, URL:", url);
       setPdfUrl(url);
-      setCurrentStep(3);
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
+      setError("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -68,7 +77,7 @@ export default function Home() {
     }
   };
 
-  // Cleanup PDF URL when component unmounts
+  // Cleanup PDF URL when component unmounts or when generating new PDF
   useEffect(() => {
     return () => {
       if (pdfUrl) {
@@ -76,6 +85,11 @@ export default function Home() {
       }
     };
   }, [pdfUrl]);
+
+  // Reset error when changing steps
+  useEffect(() => {
+    setError(null);
+  }, [currentStep]);
 
   const steps = [
     {
@@ -176,17 +190,76 @@ export default function Home() {
                 />
               )}
 
-              {currentStep === 3 && pdfUrl && (
+              {currentStep === 3 && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center mb-4">
                     <div>
                       <h2 className="text-2xl font-semibold">Preview Report</h2>
                       <p className="text-gray-600">
-                        Review your report and download the final PDF
+                        Generate a preview, review your report, and download the
+                        final PDF
                       </p>
                     </div>
+                    <div className="flex gap-4">
+                      {pdfUrl && (
+                        <button
+                          onClick={handleDownload}
+                          className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                        >
+                          Download PDF
+                        </button>
+                      )}
+                      <button
+                        onClick={handleGeneratePreview}
+                        disabled={isGenerating}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            Generating...
+                          </>
+                        ) : (
+                          "Generate Preview"
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <PDFPreview pdfUrl={pdfUrl} />
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-6">
+                      {error}
+                    </div>
+                  )}
+
+                  {pdfUrl ? (
+                    <PDFPreview pdfUrl={pdfUrl} />
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-12 text-center">
+                      <div className="mb-4">
+                        <svg
+                          className="mx-auto h-12 w-12 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No preview available
+                      </h3>
+                      <p className="text-gray-500">
+                        Click the "Generate Preview" button above to create a
+                        preview of your report
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -198,14 +271,7 @@ export default function Home() {
                 >
                   Back
                 </button>
-                {currentStep === 3 ? (
-                  <button
-                    onClick={handleDownload}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Download PDF
-                  </button>
-                ) : (
+                {currentStep < 3 && (
                   <button
                     type="submit"
                     form={

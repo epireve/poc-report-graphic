@@ -3,6 +3,8 @@ import { FormState } from '../types/form';
 
 export const generatePDF = async (formData: FormState): Promise<string> => {
   try {
+    console.log('Starting PDF generation with data:', formData);
+
     // Initialize PDF with 16:9 dimensions (PowerPoint slide ratio)
     const pdf = new jsPDF({
       orientation: 'landscape',
@@ -10,6 +12,8 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       format: [1920, 1080],
       compress: true
     });
+
+    console.log('PDF initialized');
 
     // Set default font
     pdf.setFont("helvetica");
@@ -37,6 +41,8 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       pdf.setTextColor(0, 0, 0);
     };
 
+    console.log('Starting cover page generation');
+
     // Cover Page
     // Add subtle background
     pdf.setFillColor(250, 250, 250); // Very light gray for base
@@ -47,25 +53,28 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
     // Title
     pdf.setFontSize(64);
     pdf.setTextColor(50, 50, 50); // Dark gray for text
-    const title = formData.companyProfile.reportTitle;
+    const title = formData.companyProfile.reportTitle || 'Sustainability Report';
     const titleWidth = pdf.getTextWidth(title);
     pdf.text(title, (1920 - titleWidth) / 2, 300);
 
     // Company name
     pdf.setFontSize(40);
     pdf.setTextColor(80, 80, 80);
-    const companyName = formData.companyProfile.companyName;
+    const companyName = formData.companyProfile.companyName || 'Company Name';
     const companyNameWidth = pdf.getTextWidth(companyName);
     pdf.text(companyName, (1920 - companyNameWidth) / 2, 400);
 
     // Date
     pdf.setFontSize(32);
-    const date = formData.companyProfile.reportDate;
+    const date = formData.companyProfile.reportDate || new Date().toISOString().split('T')[0];
     const dateWidth = pdf.getTextWidth(date);
     pdf.text(date, (1920 - dateWidth) / 2, 480);
 
+    console.log('Cover page completed');
+
     // Add logo if available
     if (formData.companyProfile.companyLogo) {
+      console.log('Processing logo');
       const reader = new FileReader();
       await new Promise((resolve) => {
         reader.onload = () => {
@@ -73,11 +82,15 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
           pdf.addImage(logoData, 'JPEG', (1920 - 300) / 2, 580, 300, 300);
           resolve(undefined);
         };
-        if (formData.companyProfile.companyLogo) {
-          reader.readAsDataURL(formData.companyProfile.companyLogo);
-        }
+        reader.onerror = (error) => {
+          console.error('Error reading logo:', error);
+          resolve(undefined);
+        };
+        reader.readAsDataURL(formData.companyProfile.companyLogo);
       });
     }
+
+    console.log('Starting sections generation');
 
     // Table of Contents
     pdf.addPage();
@@ -101,28 +114,31 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       // Add dot leaders between title and page number
       pdf.setFontSize(32);
       pdf.setTextColor(80, 80, 80);
-      const title = section.title;
+      const sectionTitle = section.title;
       const pageNumText = pageNum.toString();
-      const titleWidth = pdf.getTextWidth(title);
+      const titleWidth = pdf.getTextWidth(sectionTitle);
       const pageNumWidth = pdf.getTextWidth(pageNumText);
       const dotsWidth = 1600 - titleWidth - pageNumWidth - 160;
       const dots = '.'.repeat(Math.floor(dotsWidth / pdf.getTextWidth('.')));
       
-      pdf.text(title, 80, tocY);
+      pdf.text(sectionTitle, 80, tocY);
       pdf.text(dots, 80 + titleWidth + 20, tocY);
       pdf.text(pageNumText, 1840 - pageNumWidth, tocY);
       
       tocY += 60;
     });
 
+    console.log('Table of contents completed');
+
     // Content pages
-    sections.forEach((section) => {
+    sections.forEach((section, index) => {
+      console.log(`Generating section ${index + 1}: ${section.title}`);
       pdf.addPage();
       addSlideHeader(section.title);
       
       // Section content
       let yPosition = 180;
-      const paragraphs = section.content.split('\n').filter(p => p.trim());
+      const paragraphs = (section.content || '').split('\n').filter(p => p.trim());
       
       paragraphs.forEach(paragraph => {
         if (yPosition > 900) {
@@ -147,11 +163,20 @@ export const generatePDF = async (formData: FormState): Promise<string> => {
       });
     });
 
+    console.log('All sections completed, generating final PDF');
+
     // Generate blob URL
     const pdfBlob = pdf.output('blob');
-    return URL.createObjectURL(pdfBlob);
+    const url = URL.createObjectURL(pdfBlob);
+    console.log('PDF generation completed, URL created:', url);
+    return url;
   } catch (error) {
     console.error('Error generating PDF:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     throw new Error('Failed to generate PDF: ' + (error as Error).message);
   }
 }; 
